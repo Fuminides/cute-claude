@@ -5,7 +5,7 @@ Themed looks for Claude Code. Each one is a slash command that restyles the term
 | Command | Look |
 | --- | --- |
 | `/medieval` | An illuminated manuscript: drop caps in a gilt frame, rubricated headings, a scribe monk with a saying of the day |
-| `/mechanicus` | The Adeptus Mechanicus: a tech-priest at a cogitator, machine-cant wording |
+| `/mechanicus` | The Adeptus Mechanicus: a tech-priest at work each prompt, at his cogitator, with a servo-skull or anointing the machine, and once in a long while facing an angry machine spirit; machine-cant wording |
 | `/halo` | Halo, with Cortana at your side |
 | `/cat` | A ginger cat up to something different each prompt: typing at the keyboard, batting a ball of yarn, peeking out of a box or napping in a sunbeam, and once in a long while something odd |
 | `/hamster` | A tiny wizard hamster in a starry hat, busy with something new each prompt: casting over its spellbook, stirring a cauldron, gazing into a crystal ball or nibbling a sunflower seed, and once in a long while a spell gone wrong |

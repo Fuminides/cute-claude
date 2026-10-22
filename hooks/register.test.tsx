@@ -2,6 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 
 import { cat } from './cat'
 import { hamster } from './hamster'
+import { mechanicus } from './mechanicus'
 import type { Theme } from './theme'
 
 type On = Parameters<Parameters<typeof test>[1]>[1]
@@ -325,6 +326,9 @@ test('your own messages are rubricated, other rows keep the engine drawing', asy
 
 test('mechanicus takes over from medieval, and its full rite swaps the voice', async ($, on) => {
   engine(on)
+  // The engine's side of a turn, so that turns can start and end
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
   const run = async (command: string, args = '') =>
@@ -340,7 +344,7 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
   expect(await voice()).toMatch(/^Full Mechanicus immersion is on/)
 
   let ui = await $.ui.mount(reply('hola, Magos.\n\n# Rite of tests'))
-  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#39FF6A')
+  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#22B14C')
   expect((await ui.find({ type: 'Text', text: /^Rite of tests$/ }))?.props.color).toBe('#C62828')
   expect(await ui.find({ type: 'Text', text: /^\+\+\+ Rite of tests \+\+\+$/ })).toBeDefined()
   await ui.unmount()
@@ -360,9 +364,9 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
     component: 'Spinner',
     props: { word: 'Baking', message: null, suffix: '…', mode: 'responding' },
   })
-  expect(await ui.find({ type: 'Text', text: /^⚙ $/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^⚙︎ $/ })).toBeDefined()
   // 'Baking' picks this phrase; writing, it shines steady
-  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#39FF6A')
+  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#22B14C')
   await ui.unmount()
 
   // Thinking, it pulses, starting from its dimmest
@@ -372,8 +376,11 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
     component: 'Spinner',
     props: { word: 'Baking', message: null, suffix: '…', mode: 'thinking' },
   })
-  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#0f5a26')
+  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#1f8f3c')
   await ui.unmount()
+
+  // Each turn the tech-priest is drawn at something else
+  await expectScenes($, mechanicus)
 
   expect(await run('mechanicus')).toMatch(/Link severed/)
   expect(await voice()).toBe('')
