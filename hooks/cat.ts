@@ -101,7 +101,7 @@ export const cat: Theme = {
   heading: ['ฅ ', ''],
   rule: '──── =^.^= ────',
   pen: '∿',
-  mark: '♡',
+  mark: '=^•ω•^=',
   icon: 'ฅ',
   colophon: ['ฅ ', 'Nap time', '(=^•ω•^=)'],
   words: [
