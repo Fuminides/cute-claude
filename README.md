@@ -22,6 +22,28 @@ claude /cat
 
 When a look turns on, its figure waits above the prompt with a greeting until your first prompt.
 
+## Demos
+
+`/cat`
+
+![The cat look: Mazapan greets you above the prompt, then sits beside the spinner while Claude edits a file](demos/cat.gif)
+
+`/hamster`
+
+![The hamster look: the wizard hamster gazes into its crystal ball while Claude adds a docstring](demos/hamster.gif)
+
+`/medieval`
+
+![The medieval look: the monk writes by candlelight, and the reply opens on an illuminated capital](demos/medieval.gif)
+
+`/mechanicus`
+
+![The Mechanicus look: the tech-priest works with a servo-skull while Claude renames a function](demos/mechanicus.gif)
+
+`/halo`
+
+![The Halo look: Cortana's hologram flickers while Claude rewrites a line as an f-string](demos/halo.gif)
+
 <!--
 ## Screenshots
 
