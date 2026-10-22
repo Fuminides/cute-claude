@@ -1,6 +1,8 @@
 # cute-claude
 
-Themed looks for Claude Code. Each one is a slash command that restyles the terminal: headings, tool calls, the spinner (with a small pixel-art figure beside it, keeping Claude Code's time, token count and effort), the line that closes a turn, and a light touch of themed wording in Claude's replies. Code, commands and paths are never changed.
+I like nice things, everybody likes nice things! But Claude is sometimes too boring. I would like to change that, so that using Claude feels more pleasant to you. Whether for working, playing around or doing your own thing, let Claude become your little assistant!
+
+## How to use
 
 | Command | Look |
 | --- | --- |
@@ -47,10 +49,3 @@ claude plugin install cute-claude --marketplace Fuminides/cute-claude
 ```
 
 In the desktop app, where `/plugin` does not run: click + next to the prompt box, then Plugins, Add marketplace with `Fuminides/cute-claude`, then Add plugin.
-
-## Developing
-
-```bash
-claude plugin validate .
-claude plugin test .
-```
