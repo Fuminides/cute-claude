@@ -1,8 +1,11 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 import { cat } from './cat'
+import { hamster } from './hamster'
+import type { Theme } from './theme'
 
 type On = Parameters<Parameters<typeof test>[1]>[1]
+type Harness = Parameters<Parameters<typeof test>[1]>[0]
 
 // Nothing sits beneath the plugin: these hooks stand for the engine, and its clock
 const engine = (on: On) => {
@@ -36,6 +39,44 @@ const reply = (text: string, isFirstOfReply = true) =>
     component: 'AssistantMessage',
     props: { text, isFirstOfReply },
   }) as const
+
+// Each turn a look with scenes shows one of its pictures, drawn at random: the
+// first turn moves off the sprite, and over 200 more it never shows the same
+// picture twice running, shows every one, and a rare one least. The clock
+// stands still, so each picture draws the same every time it comes up. The
+// test registers the engine's side of a turn beneath the plugin first
+const expectScenes = async ($: Harness, theme: Theme) => {
+  const spinner = async () => {
+    const ui = await $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'Spinner',
+      props: { word: 'Baking', message: null, suffix: '…', mode: 'responding' },
+    })
+    const drawn = JSON.stringify(await ui.drawn())
+    await ui.unmount()
+    return drawn
+  }
+  const turn = async (turnId: string) => {
+    await $.turn.start({ text: '', turnId })
+    await $.turn.complete({ turnId, answer: '', durationMs: 1000, isAborted: false, reason: 'answer' })
+  }
+
+  const sprite = await spinner()
+  await turn('t0')
+  expect(await spinner()).not.toBe(sprite)
+
+  const drawn: string[] = []
+  for (let i = 1; i <= 200; i++) {
+    await turn(`t${i}`)
+    drawn.push(await spinner())
+  }
+  const weights = [theme.sprite, ...(theme.scenes ?? [])].map(p => p.weight ?? 1)
+  const times = [...new Set(drawn)].map(d => drawn.filter(x => x === d).length).sort((a, b) => a - b)
+  expect(drawn.every((d, i) => i === 0 || d !== drawn[i - 1])).toBe(true)
+  expect(times).toHaveLength(weights.length)
+  if (weights.some(w => w < 1)) expect(times[0]).toBeLessThan(times[1])
+}
 
 test('a reply opens on a framed drop cap only when the mode is on', async ($, on) => {
   engine(on)
@@ -453,30 +494,8 @@ test('cat sits on the keyboard, light or in full, and wanders off again', async 
   expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
   await ui.unmount()
 
-  // Each turn the cat finds something else to do, drawn at random: never the
-  // same thing twice running, everything now and then, a rare scene seldom
-  const turn = async (turnId: string) => {
-    await $.turn.start({ text: '', turnId })
-    await $.turn.complete({ turnId, answer: '', durationMs: 1000, isAborted: false, reason: 'answer' })
-  }
-  await turn('t0')
-  ui = await spinner('responding')
-  expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
-  await ui.unmount()
-
-  // The clock stands still, so each picture draws the same every time it comes up
-  const drawn: string[] = []
-  for (let i = 1; i <= 200; i++) {
-    await turn(`t${i}`)
-    ui = await spinner('responding')
-    drawn.push(JSON.stringify(await ui.drawn()))
-    await ui.unmount()
-  }
-  const weights = [cat.sprite, ...(cat.scenes ?? [])].map(p => p.weight ?? 1)
-  const times = [...new Set(drawn)].map(d => drawn.filter(x => x === d).length).sort((a, b) => a - b)
-  expect(drawn.every((d, i) => i === 0 || d !== drawn[i - 1])).toBe(true)
-  expect(times).toHaveLength(weights.length)
-  if (weights.some(w => w < 1)) expect(times[0]).toBeLessThan(times[1])
+  // Each turn the cat finds something else to do
+  await expectScenes($, cat)
 
   expect(await run('cat')).toMatch(/wandered off/)
   expect(await voice()).toBe('')
@@ -484,6 +503,9 @@ test('cat sits on the keyboard, light or in full, and wanders off again', async 
 
 test('hamster conjures a tiny wizard, light or in full, and sends it home', async ($, on) => {
   engine(on)
+  // The engine's side of a turn, so that turns can start and end
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
   const run = async (command: string, args = '') =>
@@ -503,9 +525,9 @@ test('hamster conjures a tiny wizard, light or in full, and sends it home', asyn
   expect(await run('hamster', 'full')).toMatch(/Archmage/)
   expect(await voice()).toMatch(/^Full wizard hamster immersion is on/)
 
-  // A drop cap in a round frame, headings in violet behind a star
+  // No drop cap: the reply opens plainly, its headings in violet behind a star
   let ui = await $.ui.mount(reply('hola, Archimago.\n\n# Wards'))
-  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#E8892B')
+  expect(await ui.find({ type: 'Text', text: /^H$/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /^✦ Wards$/ })).toBeDefined()
   expect((await ui.find({ type: 'Text', text: /^Wards$/ }))?.props.color).toBe('#8B5CF6')
   await ui.unmount()
@@ -528,6 +550,9 @@ test('hamster conjures a tiny wizard, light or in full, and sends it home', asyn
   })
   expect((await ui.find({ type: 'Text' }))?.text).toMatch(/^✦ Spell complete · \w+ in 3s ✦$/)
   await ui.unmount()
+
+  // Each turn the hamster takes up another bit of magic
+  await expectScenes($, hamster)
 
   expect(await run('hamster')).toMatch(/vanishes in a puff of glitter/)
   expect(await voice()).toBe('')
