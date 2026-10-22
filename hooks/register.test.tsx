@@ -200,23 +200,23 @@ test('the spinner keeps the seconds, tokens and effort the engine would show', a
       component: 'Spinner',
       props: { word: 'Baking', message: null, suffix: '…', mode: 'responding' },
     })
-    const text = (await ui.find({ type: 'Text', text: /^ \(/ }))?.text
+    const text = (await ui.find({ type: 'Text', text: /^\d+s( ·|$)/ }))?.text
     await ui.unmount()
     return text
   }
 
-  expect(await stats()).toBe(' (0s)')
+  expect(await stats()).toBe('0s')
 
   // Midway through the stream the count is an estimate, four characters a token
   const stream = $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', effort: 'high', messageCount: 1 })
   await stream.next()
   await clock.advance(2000)
-  expect(await stats()).toBe(' (2s · ↓ 10 tokens · high effort)')
+  expect(await stats()).toBe('2s · ↓ 10 tokens · high effort')
 
   // Once the step ends, the API's own figure takes its place
   for await (const _ of stream);
   await clock.advance(1000)
-  expect(await stats()).toBe(' (3s · ↓ 12 tokens · high effort)')
+  expect(await stats()).toBe('3s · ↓ 12 tokens · high effort')
 })
 
 test('your own messages are rubricated, other rows keep the engine drawing', async ($, on) => {

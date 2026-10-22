@@ -320,7 +320,7 @@ export const register: Register = on => {
 
   // On the terminal the whole line is drawn here, picture included, so the
   // seconds, tokens and effort the engine would add come from the turn's own
-  // clock and steps
+  // clock and steps; they sit under the word, close to the picture
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     const t = look?.theme
     if (!t) return next(e)
@@ -355,10 +355,16 @@ export const register: Register = on => {
               </Text>
             ))}
           </Box>
-          <Text color={t.colors.gilt}>{`${t.icon} `}</Text>
-          <Text color={glow} bold>{t.initial(label.slice(0, 1)) + label.slice(1)}</Text>
-          <Text color={glow}>{label.endsWith('…') ? '' : e.props.suffix}</Text>
-          <Text dimColor>{` (${stats.filter(Boolean).join(' · ')})`}</Text>
+          <Box flexDirection="column">
+            <Box flexDirection="row">
+              <Text color={t.colors.gilt}>{`${t.icon} `}</Text>
+              <Text color={glow} bold>{t.initial(label.slice(0, 1)) + label.slice(1)}</Text>
+              <Text color={glow}>{label.endsWith('…') ? '' : e.props.suffix}</Text>
+            </Box>
+            <Box paddingLeft={2}>
+              <Text dimColor>{stats.filter(Boolean).join(' · ')}</Text>
+            </Box>
+          </Box>
         </Box>
         {saying ? (
           <Text wrap="truncate-end">
