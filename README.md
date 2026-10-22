@@ -1,13 +1,13 @@
 # cute-claude
 
-Themed looks for Claude Code. Each one is a slash command that restyles the terminal: headings, tool calls, the spinner (with a small pixel-art figure beside it), the line that closes a turn, and a light touch of themed wording in Claude's replies. Code, commands and paths are never changed.
+Themed looks for Claude Code. Each one is a slash command that restyles the terminal: headings, tool calls, the spinner (with a small pixel-art figure beside it, keeping Claude Code's time, token count and effort), the line that closes a turn, and a light touch of themed wording in Claude's replies. Code, commands and paths are never changed.
 
 | Command | Look |
 | --- | --- |
 | `/medieval` | An illuminated manuscript: drop caps in a gilt frame, rubricated headings, a scribe monk with a saying of the day |
 | `/mechanicus` | The Adeptus Mechanicus: a tech-priest at a cogitator, machine-cant wording |
 | `/halo` | Halo, with Cortana at your side |
-| `/cat` | A ginger cat on your keyboard: paws on the keys while Claude writes, dreaming of fish while it thinks |
+| `/cat` | A ginger cat up to something different each prompt: typing at the keyboard, batting a ball of yarn, peeking out of a box or napping in a sunbeam |
 | `/hamster` | A tiny wizard hamster with a starry hat, a wand and a spellbook |
 
 Run the same command again to turn the look off, or another look's command to switch. Where a look offers it, `/<look> full` turns on full role-play immersion: Claude speaks in character, and every technical detail stays exact.

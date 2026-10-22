@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { cat } from './cat'
+
 type On = Parameters<Parameters<typeof test>[1]>[1]
 
 // Nothing sits beneath the plugin: these hooks stand for the engine, and its clock
@@ -170,6 +172,53 @@ test('the spinner and the closing line take medieval words when on', async ($, o
   await done.unmount()
 })
 
+test('the spinner keeps the seconds, tokens and effort the engine would show', async ($, on) => {
+  const clock = engine(on)
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  // The step beneath streams 40 characters, then the API reports 12 tokens for them
+  on('turn.step', async function* (_, e) {
+    const usage = { input_tokens: 5, output_tokens: 12, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
+    yield { kind: 'text', index: 0, text: 'x'.repeat(40) } as const
+    yield { kind: 'stop', stopReason: 'end_turn', usage: { ...usage, model: 'claude-opus-5-5' } } as const
+    return {
+      turnId: e.turnId,
+      index: e.index,
+      answer: 'x'.repeat(40),
+      toolUses: [],
+      stopReason: 'end_turn',
+      usage: { ...usage, model: 'claude-opus-5-5' },
+    } as const
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run({ command: 'medieval', args: '' })
+  await $.turn.start({ text: 'hola', turnId: 't1' })
+
+  const stats = async () => {
+    const ui = await $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'Spinner',
+      props: { word: 'Baking', message: null, suffix: '…', mode: 'responding' },
+    })
+    const text = (await ui.find({ type: 'Text', text: /^ \(/ }))?.text
+    await ui.unmount()
+    return text
+  }
+
+  expect(await stats()).toBe(' (0s)')
+
+  // Midway through the stream the count is an estimate, four characters a token
+  const stream = $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', effort: 'high', messageCount: 1 })
+  await stream.next()
+  await clock.advance(2000)
+  expect(await stats()).toBe(' (2s · ↓ 10 tokens · high effort)')
+
+  // Once the step ends, the API's own figure takes its place
+  for await (const _ of stream);
+  await clock.advance(1000)
+  expect(await stats()).toBe(' (3s · ↓ 12 tokens · high effort)')
+})
+
 test('your own messages are rubricated, other rows keep the engine drawing', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
@@ -324,6 +373,9 @@ test('halo brings Cortana online, light or in full, and takes her off again', as
 
 test('cat sits on the keyboard, light or in full, and wanders off again', async ($, on) => {
   engine(on)
+  // The engine's side of a turn, so that turns can start and end
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
   const run = async (command: string, args = '') =>
@@ -343,9 +395,9 @@ test('cat sits on the keyboard, light or in full, and wanders off again', async 
   expect(await run('cat', 'full')).toMatch(/my human/)
   expect(await voice()).toMatch(/^Full cat immersion is on/)
 
-  // A pink drop cap in a round frame, and headings behind a paw
+  // No drop cap: the reply opens plainly, its headings behind a paw
   let ui = await $.ui.mount(reply('hola, humano.\n\n# Mouse hunt'))
-  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#E0567A')
+  expect(await ui.find({ type: 'Text', text: /^H$/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /^ฅ Mouse hunt$/ })).toBeDefined()
   expect((await ui.find({ type: 'Text', text: /^Mouse hunt$/ }))?.props.color).toBe('#E0567A')
   await ui.unmount()
@@ -360,6 +412,31 @@ test('cat sits on the keyboard, light or in full, and wanders off again', async 
   ui = await spinner('thinking')
   expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
   await ui.unmount()
+
+  // Each turn the cat finds something else to do, drawn at random: never the
+  // same thing twice running, everything now and then, a rare scene seldom
+  const turn = async (turnId: string) => {
+    await $.turn.start({ text: '', turnId })
+    await $.turn.complete({ turnId, answer: '', durationMs: 1000, isAborted: false, reason: 'answer' })
+  }
+  await turn('t0')
+  ui = await spinner('responding')
+  expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
+  await ui.unmount()
+
+  // The clock stands still, so each picture draws the same every time it comes up
+  const drawn: string[] = []
+  for (let i = 1; i <= 200; i++) {
+    await turn(`t${i}`)
+    ui = await spinner('responding')
+    drawn.push(JSON.stringify(await ui.drawn()))
+    await ui.unmount()
+  }
+  const weights = [cat.sprite, ...(cat.scenes ?? [])].map(p => p.weight ?? 1)
+  const times = [...new Set(drawn)].map(d => drawn.filter(x => x === d).length).sort((a, b) => a - b)
+  expect(drawn.every((d, i) => i === 0 || d !== drawn[i - 1])).toBe(true)
+  expect(times).toHaveLength(weights.length)
+  if (weights.some(w => w < 1)) expect(times[0]).toBeLessThan(times[1])
 
   expect(await run('cat')).toMatch(/wandered off/)
   expect(await voice()).toBe('')

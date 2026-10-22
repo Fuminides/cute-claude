@@ -26,11 +26,19 @@ export type Theme = {
   done: string[]
   // What the figure beside the spinner says beneath himself, one a day; absent, he keeps quiet
   sayings?: { text: string; by?: string }[]
-  // The picture beside the spinner, one character a pixel ('.' is empty), and
-  // how one frame of it changes while the model thinks or writes
-  sprite: {
-    pixels: Record<string, string>
-    base: string[]
-    animate: (px: string[][], frame: number, isThinking: boolean) => void
-  }
+  sprite: Sprite
+  // More pictures beside the spinner: each turn shows one of them or the
+  // sprite, drawn at random and never the same twice running; absent, the
+  // sprite stays
+  scenes?: Sprite[]
+}
+
+// A picture beside the spinner, one character a pixel ('.' is empty), and
+// how one frame of it changes while the model thinks or writes
+export type Sprite = {
+  // How likely the picture is to be drawn against the others' 1: below 1 for a rare one
+  weight?: number
+  pixels: Record<string, string>
+  base: string[]
+  animate: (px: string[][], frame: number, isThinking: boolean) => void
 }

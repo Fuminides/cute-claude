@@ -6,12 +6,24 @@ import { halo } from './halo'
 import { hamster } from './hamster'
 import { mechanicus } from './mechanicus'
 import { medieval } from './medieval'
-import type { Theme } from './theme'
+import type { Sprite, Theme } from './theme'
 
 const THEMES = [medieval, mechanicus, halo, cat, hamster]
 
-// What the spinner's picture draws from: an animation frame and the turn's seconds
-const tick = atom({ plugin: 'cute-claude', key: 'tick' } as const, { frame: 0, seconds: 0 })
+// What the spinner line draws from: an animation frame, and the turn's seconds,
+// output tokens and effort
+const tick = atom({ plugin: 'cute-claude', key: 'tick' } as const, { frame: 0, seconds: 0, tokens: 0 })
+
+// Which of the look's pictures the spinner shows this turn: 0 for its sprite,
+// then its scenes
+const scene = atom({ plugin: 'cute-claude', key: 'scene' } as const, 0)
+
+// A picture other than the last one, drawn at random by weight
+const sample = (pictures: Sprite[], last: number) => {
+  const odds = pictures.map((p, i) => (i === last ? 0 : (p.weight ?? 1)))
+  let r = Math.random() * odds.reduce((a, b) => a + b, 0)
+  return odds.findIndex(w => (r -= w) < 0)
+}
 
 const pick = (list: string[], seed: string) =>
   list[[...seed].reduce((n, c) => n + c.charCodeAt(0), 0) % list.length]
@@ -24,6 +36,9 @@ const mix = (a: string, b: string, k: number) => {
     .map(i => Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * k).toString(16).padStart(2, '0'))
     .join('')}`
 }
+
+// A token count in short: 950, 1.2k
+const count = (n: number) => (n < 1000 ? `${n}` : `${(n / 1000).toFixed(1)}k`)
 
 // A smooth rise and fall from 0 to 1 and back, once every 12 frames
 const wave = (frame: number) => (1 - Math.cos((2 * Math.PI * (frame % 12)) / 12)) / 2
@@ -124,6 +139,9 @@ export const register: Register = on => {
   let look: { theme: Theme; isFull: boolean } | undefined
   let timer: Timer | undefined
   let startedAt = 0
+  // The main turn's output tokens so far, and the effort its requests ask for
+  let tokens = 0
+  let effort: string | undefined
 
   // Turns a look on, switches to it from another (or between its light and
   // full voice), or turns it off when it is already on as asked
@@ -159,14 +177,42 @@ export const register: Register = on => {
 
     timer?.cancel()
     startedAt = await $.clock.now()
-    await update($, tick, () => ({ frame: 0, seconds: 0 }))
+    tokens = 0
+    effort = undefined
+    await update($, tick, () => ({ frame: 0, seconds: 0, tokens: 0 }))
+    if (look.theme.scenes) {
+      const pictures = [look.theme.sprite, ...look.theme.scenes]
+      await update($, scene, last => sample(pictures, last))
+    }
     // 8 frames a second, so a pulse fades smoothly; the picture moves on every other one
     timer = $.clock.every(125, async () => {
       const seconds = Math.floor(((await $.clock.now()) - startedAt) / 1000)
-      await update($, tick, t => ({ frame: t.frame + 1, seconds }))
+      await update($, tick, t => ({ frame: t.frame + 1, seconds, tokens, effort }))
     })
 
     return next(e)
+  })
+
+  // The spinner line is drawn here, so it counts the tokens the engine's would:
+  // about four characters a token while a step streams, then what the API
+  // reports for it
+  on('turn.step', async function* ($, e, next) {
+    if (e.agentId !== undefined || !look) return yield* next(e)
+
+    effort = typeof e.effort === 'string' ? e.effort : undefined
+    const before = tokens
+    let chars = 0
+    const stream = next(e)
+    for await (const chunk of stream) {
+      if (chunk.kind === 'text' || chunk.kind === 'thinking') chars += chunk.text.length
+      if (chunk.kind === 'input') chars += chunk.json.length
+      tokens = before + Math.round(chars / 4)
+      yield chunk
+    }
+    const result = await stream.result
+    tokens = before + (result.usage?.output_tokens ?? Math.round(chars / 4))
+
+    return result
   })
 
   on('turn.complete', ($, e, next) => {
@@ -273,7 +319,8 @@ export const register: Register = on => {
   })
 
   // On the terminal the whole line is drawn here, picture included, so the
-  // engine's token count goes; the seconds are kept from the turn's own clock
+  // seconds, tokens and effort the engine would add come from the turn's own
+  // clock and steps
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     const t = look?.theme
     if (!t) return next(e)
@@ -281,10 +328,13 @@ export const register: Register = on => {
     const word = pick(t.words, e.props.word)
     if (e.surface !== 'terminal') return next({ ...e, props: { ...e.props, word } })
 
-    const { frame, seconds } = await read($, tick)
+    const { frame, seconds, tokens, effort } = await read($, tick)
+    const stats = [`${seconds}s`, tokens ? `↓ ${count(tokens)} tokens` : '', effort ? `${effort} effort` : '']
     const isThinking = e.props.mode === 'thinking' || e.props.mode === 'requesting'
-    const px = t.sprite.base.map(row => [...row])
-    t.sprite.animate(px, Math.floor(frame / 2), isThinking)
+    const pictures = [t.sprite, ...(t.scenes ?? [])]
+    const sprite = pictures[(await read($, scene)) % pictures.length]
+    const px = sprite.base.map(row => [...row])
+    sprite.animate(px, Math.floor(frame / 2), isThinking)
     const label = e.props.message ?? word
     const glow = isThinking && t.pulse ? mix(t.pulse, t.colors.letter, wave(frame)) : t.colors.letter
     // The day's saying, the same all day long (days turn at midnight UTC)
@@ -294,8 +344,8 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" alignItems="center">
-          <Box flexDirection="column" width={t.sprite.base[0].length} flexShrink={0} marginRight={2}>
-            {cells(px, t.sprite.pixels).map(row => (
+          <Box flexDirection="column" width={sprite.base[0].length} flexShrink={0} marginRight={2}>
+            {cells(px, sprite.pixels).map(row => (
               <Text>
                 {row.map(run => (
                   <Text color={run.color} backgroundColor={run.backgroundColor}>
@@ -308,7 +358,7 @@ export const register: Register = on => {
           <Text color={t.colors.gilt}>{`${t.icon} `}</Text>
           <Text color={glow} bold>{t.initial(label.slice(0, 1)) + label.slice(1)}</Text>
           <Text color={glow}>{label.endsWith('…') ? '' : e.props.suffix}</Text>
-          <Text dimColor>{` ${seconds}s`}</Text>
+          <Text dimColor>{` (${stats.filter(Boolean).join(' · ')})`}</Text>
         </Box>
         {saying ? (
           <Text wrap="truncate-end">
