@@ -92,14 +92,16 @@ const segments = (text: string) => {
   return blocks
 }
 
-// What a tool call is about, in one line: its command, file, pattern or address
-const gloss = (tool: string, input: unknown) => {
+// What a tool call is about, in one line: its command, file, pattern or
+// address, a path inside the session's folder written from there
+const gloss = (tool: string, input: unknown, cwd: string) => {
   const i = (input ?? {}) as Record<string, unknown>
   const about = [i.command, i.file_path, i.pattern, i.url, i.description].find(
     v => typeof v === 'string',
   ) as string | undefined
+  const line = about?.split('\n')[0]
 
-  return about ? `${tool} · ${about.split('\n')[0]}` : tool
+  return line ? `${tool} · ${line.startsWith(`${cwd}/`) ? line.slice(cwd.length + 1) : line}` : tool
 }
 
 // Two pixels a cell: the upper one as a half block's colour, the lower as its
@@ -154,6 +156,8 @@ export const register: Register = on => {
   let look: { theme: Theme; isFull: boolean } | undefined
   // Whether the look's figure greets above the prompt: from turning it on to the first turn
   let isGreeting = false
+  // The session's folder, which tool rows write the paths inside it from
+  let cwd = ''
   let timer: Timer | undefined
   let startedAt = 0
   // The main turn's output tokens so far, and the effort its requests ask for
@@ -172,6 +176,7 @@ export const register: Register = on => {
   }
 
   on('session.start', async ($, e, next) => {
+    cwd = e.cwd
     for (const theme of THEMES) {
       await $.command.register({ name: theme.command, description: theme.description })
     }
@@ -331,7 +336,7 @@ export const register: Register = on => {
     return (
       <Box>
         <Text color={t.colors.gilt}>{`${t.pen} `}</Text>
-        <Text dimColor italic wrap="truncate-end">{gloss(e.props.tool, e.props.input)}</Text>
+        <Text dimColor italic wrap="truncate-end">{gloss(e.props.tool, e.props.input, cwd)}</Text>
         {e.props.isErrored || e.props.isInterrupted ? <Text color={t.colors.rubric}> ✗</Text> : null}
       </Box>
     )

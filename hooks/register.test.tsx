@@ -159,6 +159,35 @@ test('a tool call draws as a gloss, and in full when expanded', async ($, on) =>
   await ui.unmount()
 })
 
+test("a tool call's path inside the session's folder is written from there", async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+  await $.command.run({ command: 'medieval', args: '' })
+
+  const gloss = async (file_path: string) => {
+    const ui = await $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'ToolUse',
+      props: {
+        tool_use_id: 't1',
+        tool: 'Edit',
+        input: { file_path },
+        isRunning: false,
+        isErrored: false,
+        isInterrupted: false,
+        isExpanded: false,
+      },
+    })
+    const text = (await ui.find({ type: 'Text', text: /^Edit/ }))?.text
+    await ui.unmount()
+    return text
+  }
+
+  expect(await gloss('/work/src/hello.py')).toBe('Edit · src/hello.py')
+  expect(await gloss('/workshop/hello.py')).toBe('Edit · /workshop/hello.py')
+})
+
 test('the voice section is in the system prompt only while the mode is on', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
