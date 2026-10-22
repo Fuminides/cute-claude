@@ -321,3 +321,97 @@ test('halo brings Cortana online, light or in full, and takes her off again', as
   expect(await run('halo')).toMatch(/offline/)
   expect(await voice()).toBe('')
 })
+
+test('cat sits on the keyboard, light or in full, and wanders off again', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const run = async (command: string, args = '') =>
+    ((await $.command.run({ command, args })) as { text?: string }).text ?? ''
+  const voice = async () =>
+    (await $.prompt.compose(request)).sections.find(s => s.id === 'cute-claude:voice')?.text ?? ''
+  const spinner = (mode: 'thinking' | 'responding') =>
+    $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'Spinner',
+      props: { word: 'Baking', message: null, suffix: '…', mode },
+    })
+
+  expect(await run('cat')).toMatch(/^Mrrp! Cat mode is on\./)
+  expect(await voice()).toMatch(/^Cat mode is on/)
+  expect(await run('cat', 'full')).toMatch(/my human/)
+  expect(await voice()).toMatch(/^Full cat immersion is on/)
+
+  // A pink drop cap in a round frame, and headings behind a paw
+  let ui = await $.ui.mount(reply('hola, humano.\n\n# Mouse hunt'))
+  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#E0567A')
+  expect(await ui.find({ type: 'Text', text: /^ฅ Mouse hunt$/ })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: /^Mouse hunt$/ }))?.props.color).toBe('#E0567A')
+  await ui.unmount()
+
+  // The day's saying sits beneath the cat, and writing and thinking draw it apart
+  ui = await spinner('responding')
+  const writing = JSON.stringify(await ui.drawn())
+  expect(await ui.find({ type: 'Text', text: /^ฅ $/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^Sniffing the logs$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '« Every keyboard is a warm bed »' })).toBeDefined()
+  await ui.unmount()
+  ui = await spinner('thinking')
+  expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
+  await ui.unmount()
+
+  expect(await run('cat')).toMatch(/wandered off/)
+  expect(await voice()).toBe('')
+})
+
+test('hamster conjures a tiny wizard, light or in full, and sends it home', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const run = async (command: string, args = '') =>
+    ((await $.command.run({ command, args })) as { text?: string }).text ?? ''
+  const voice = async () =>
+    (await $.prompt.compose(request)).sections.find(s => s.id === 'cute-claude:voice')?.text ?? ''
+  const spinner = (mode: 'thinking' | 'responding') =>
+    $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'Spinner',
+      props: { word: 'Baking', message: null, suffix: '…', mode },
+    })
+
+  expect(await run('hamster')).toMatch(/^Poof! Wizard hamster mode is on\./)
+  expect(await voice()).toMatch(/^Wizard hamster mode is on/)
+  expect(await run('hamster', 'full')).toMatch(/Archmage/)
+  expect(await voice()).toMatch(/^Full wizard hamster immersion is on/)
+
+  // A drop cap in a round frame, headings in violet behind a star
+  let ui = await $.ui.mount(reply('hola, Archimago.\n\n# Wards'))
+  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#E8892B')
+  expect(await ui.find({ type: 'Text', text: /^✦ Wards$/ })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: /^Wards$/ }))?.props.color).toBe('#8B5CF6')
+  await ui.unmount()
+
+  // The day's saying sits beneath it, and writing and thinking draw it apart
+  ui = await spinner('responding')
+  const writing = JSON.stringify(await ui.drawn())
+  expect(await ui.find({ type: 'Text', text: /^✦ $/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '« Small paws, big spells »' })).toBeDefined()
+  await ui.unmount()
+  ui = await spinner('thinking')
+  expect(JSON.stringify(await ui.drawn())).not.toBe(writing)
+  await ui.unmount()
+
+  ui = await $.ui.mount({
+    plugin: 'cute-claude',
+    surface: 'terminal',
+    component: 'TurnDuration',
+    props: { word: 'Baked', durationMs: 3000 },
+  })
+  expect((await ui.find({ type: 'Text' }))?.text).toMatch(/^✦ Spell complete · \w+ in 3s ✦$/)
+  await ui.unmount()
+
+  expect(await run('hamster')).toMatch(/vanishes in a puff of glitter/)
+  expect(await voice()).toBe('')
+})

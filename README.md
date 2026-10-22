@@ -7,6 +7,8 @@ Themed looks for Claude Code. Each one is a slash command that restyles the term
 | `/medieval` | An illuminated manuscript: drop caps in a gilt frame, rubricated headings, a scribe monk with a saying of the day |
 | `/mechanicus` | The Adeptus Mechanicus: a tech-priest at a cogitator, machine-cant wording |
 | `/halo` | Halo, with Cortana at your side |
+| `/cat` | A ginger cat on your keyboard: paws on the keys while Claude writes, dreaming of fish while it thinks |
+| `/hamster` | A tiny wizard hamster with a starry hat, a wand and a spellbook |
 
 Run the same command again to turn the look off, or another look's command to switch. Where a look offers it, `/<look> full` turns on full role-play immersion: Claude speaks in character, and every technical detail stays exact.
 
@@ -16,6 +18,8 @@ Run the same command again to turn the look off, or another look's command to sw
 ![medieval](screenshots/medieval.png)
 ![mechanicus](screenshots/mechanicus.png)
 ![halo](screenshots/halo.png)
+![cat](screenshots/cat.png)
+![hamster](screenshots/hamster.png)
 -->
 
 ## Install

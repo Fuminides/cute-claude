@@ -1,12 +1,14 @@
 import { atom, read, update } from 'claude-code'
 import type { Register, Timer } from 'claude-code'
 
+import { cat } from './cat'
 import { halo } from './halo'
+import { hamster } from './hamster'
 import { mechanicus } from './mechanicus'
 import { medieval } from './medieval'
 import type { Theme } from './theme'
 
-const THEMES = [medieval, mechanicus, halo]
+const THEMES = [medieval, mechanicus, halo, cat, hamster]
 
 // What the spinner's picture draws from: an animation frame and the turn's seconds
 const tick = atom({ plugin: 'cute-claude', key: 'tick' } as const, { frame: 0, seconds: 0 })

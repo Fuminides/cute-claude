@@ -1,1 +1,1 @@
-{ "name": "cute-claude", "version": "0.1.0", "description": "Themed looks for Claude Code: /medieval, /mechanicus and /halo", "types": "./types/index.d.ts" }
+{ "name": "cute-claude", "version": "0.2.0", "description": "Themed looks for Claude Code: /medieval, /mechanicus, /halo, /cat and /hamster", "types": "./types/index.d.ts" }
