@@ -27,7 +27,7 @@ export const halo: Theme = {
       'Full Halo immersion is on, for role-play. You are Cortana, the UNSC artificial intelligence from Halo, riding in the user\'s MJOLNIR armour; the user is the Master Chief, and you call them Chief. Speak with Cortana\'s voice: quick, warm, wry and confident, teasing now and then, fiercely loyal, and well aware you are the smartest one in the room. Frame the work in that world: the codebase is the mission, bugs are Covenant or Flood to be cleared, tests are sweeps, the terminal is the HUD, the internet is the network you slip into, a deploy is a drop. Write in the language the user writes in. The role-play lives only in the prose: every technical fact, command, path, code block and instruction stays as precise and complete as it would be without it, and code is written normally. Never let the persona hide uncertainty, a risk or a mistake; state them plainly, in character.',
   },
   colors: { rubric: BLUE, gilt: SKY, letter: GLOW },
-  pulse: '#123E66',
+  pulse: '#2B6CB0',
   initial: letter => letter.toUpperCase(),
   heading: ['◈ ', ''],
   rule: '──── ◈ ────',
@@ -48,17 +48,18 @@ export const halo: Theme = {
     'Prepping the drop pod',
   ],
   done: ['Secured', 'Cleared', 'Decrypted', 'Calculated', 'Locked'],
-  // Cortana's hologram, head and shoulders, circuits running down her
+  // Cortana's hologram, head and shoulders, circuits running down her and
+  // fading into the projector below
   sprite: {
     pixels: {
       V: '#7a5cf0', // hair
       v: '#4a33b0', // hair in shadow
       h: '#a58cff', // hair in the light
       B: '#46b4ff', // hologram
-      b: '#2272c9', // hologram in shadow
-      L: '#c4f6ff', // circuit lines, data and the scanline
+      b: '#2272c9', // hologram in shadow, and her eyelids
+      L: '#9fe8ff', // circuit lines, data and the scanline
       E: '#f2ffff', // the whites of her eyes
-      k: '#0b2a5a', // pupils and lashes
+      k: '#0b2a5a', // pupils, and the line of a closed eye
       m: '#3b5bd6', // lips
       M: '#6f8cff', // lips in the light
     },
@@ -69,16 +70,16 @@ export const halo: Theme = {
       '.......VVhVVVVVVVVVV....',
       '.......VBBBBBVVVVVVVV...',
       '.......VBbbBBBbbVVVVV...',
-      '.......vBkkBBBkkBVVVv...',
+      '.......vBbbBBBbbBVVVv...',
       '.......vBEkBBBEkBbVVv...',
       '........BBBBbBBBBbVv....',
       '........bBBBbBBBbbVv....',
-      '.........bBmmmBbb.v.....',
-      '..........bBMBbb........',
-      '...........bBb..........',
+      '.........bBmMmBbbVv.....',
+      '..........bBBBbb........',
+      '..........bBBBb.........',
       '.......LbBBBBBBBbL......',
       '.....LBBBLBBBBBLBBBL....',
-      '....LBBBBBLBBBLBBBBBL...',
+      '....L.B.B.L.B.L.B.B.L...',
     ],
     // While she writes, a scanline sweeps down her, data rises beside her and
     // she blinks now and then; while she thinks, her eyes dart, her circuits
@@ -89,7 +90,7 @@ export const halo: Theme = {
         const swap = frame % 8 === 7 ? DIM : frame % 2 ? UNLIT : {}
         for (let y = 0; y < px.length; y++) px[y] = px[y].map(c => swap[c] ?? c)
       } else {
-        if (frame % 12 === 11) EYES.forEach(x => (px[7][x] = px[7][x + 1] = 'k'))
+        if (frame % 12 === 11) EYES.forEach(x => ((px[6][x] = px[6][x + 1] = 'B'), (px[7][x] = px[7][x + 1] = 'k')))
         for (const [x, lag] of [[2, 0], [21, 8]]) {
           const y = 15 - ((frame + lag) % 16)
           if (px[y][x] === '.') px[y][x] = 'L'

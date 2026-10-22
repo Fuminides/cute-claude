@@ -185,7 +185,7 @@ test('your own messages are rubricated, other rows keep the engine drawing', asy
 
   let ui = await message({ kind: 'composer' })
   expect((await ui.find({ type: 'Text', text: '✠' }))?.props.color).toBe('#C0392B')
-  expect((await ui.find({ type: 'Text', text: /^hola$/ }))?.props.color).toBe('#D4AF37')
+  expect((await ui.find({ type: 'Text', text: /^hola$/ }))?.props.color).toBe('#B8860B')
   await ui.unmount()
 
   ui = await message({ kind: 'unclassified' })

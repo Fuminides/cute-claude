@@ -2,7 +2,7 @@ import type { Theme } from './theme'
 
 // Manuscript palette: vermilion rubrics and gold leaf
 const RUBRIC = '#C0392B'
-const GOLD = '#D4AF37'
+const GOLD = '#B8860B'
 
 // Bold Fraktur capital for the first letter of a reply, like an illuminated initial
 const illuminate = (text: string) => {
@@ -15,6 +15,10 @@ const illuminate = (text: string) => {
 
 // Where the ink lands on the page's bottom line, the red initial first
 const INK = [10, 11, 13, 14, 16, 17]
+
+// Over his head, a thought bubble and the two puffs that lead to it
+const BUBBLE = ['.qqqq.', 'qQQQQq', '.qqqq.']
+const PUFFS = [[11, 4], [12, 2]]
 
 export const medieval: Theme = {
   command: 'medieval',
@@ -32,7 +36,7 @@ export const medieval: Theme = {
   frame: 'double',
   heading: ['❧ ', ''],
   rule: '──── ❦ ────',
-  pen: '✒',
+  pen: '✎',
   mark: '✠',
   icon: '⚜',
   colophon: ['❦ ', 'Explicit', '❦'],
@@ -79,14 +83,14 @@ export const medieval: Theme = {
       w: '#cdb57a', // parchment edge
       I: '#2b2b40', // ink
       N: RUBRIC, // the page's red initial
-      Q: '#f5f5f0', // quill and thought bubble
-      q: '#bdbdb5', // quill shaft
+      Q: '#e6e6de', // quill and thought bubble
+      q: '#9a9a90', // quill shaft and the bubble's rim
       D: '#8a5a2b', // desk
       d: '#5a3818', // desk legs
-      C: '#f7efd2', // candle
-      c: '#d8cfae', // candle in shadow
+      C: '#f1e4b8', // candle
+      c: '#c9b98a', // candle in shadow
       F: '#ffb52e', // flame
-      f: '#fff2a8', // flame core
+      f: '#ffdd55', // flame core
       G: GOLD, // candlestick
     },
     base: [
@@ -95,14 +99,14 @@ export const medieval: Theme = {
       '..KKRRRRK...............',
       '.KRRRRRRRK..............',
       '.KRRRRHHSK..............',
-      'KRRRRHHSKSS..........f..',
-      'KRRRRHHSSSK.........fFf.',
+      'KRRRRHHSKSS..........F..',
+      'KRRRRHHSSSK.........FfF.',
       'KRRRRRHSsK..........FfF.',
       'KRRRRRRKK.......Q....K..',
-      'KRRRRRRRRK.....QQ...cCC.',
-      'KRRRRRRRRRRRKSSq....cCC.',
-      'KRRRrRRRRRRRSSq.....cCC.',
-      'KRRRrRRRKWWWWWWWWWW.cCC.',
+      'KRRRRRRRRK.....QQ...cCc.',
+      'KRRRRRRRRRRRKSSq....cCc.',
+      'KRRRrRRRRRRRSSq.....cCc.',
+      'KRRRrRRRKWWWWWWWWWW.cCc.',
       'KRRRrRRRKwWWWWWWWWw.GGG.',
       'KrrrrrrrKDDDDDDDDDDDDDDD',
       'KKKKKKKKK.dd........dd..',
@@ -112,7 +116,7 @@ export const medieval: Theme = {
     animate: (px, frame, isThinking) => {
       if (frame % 2) {
         px[5][21] = '.'
-        px[5][22] = 'f'
+        px[5][22] = 'F'
         px[6][20] = '.'
         px[6][21] = 'f'
         px[6][22] = 'F'
@@ -121,10 +125,17 @@ export const medieval: Theme = {
         px[13][x] = i === 0 ? 'N' : 'I'
       })
       if (isThinking) {
-        const bubble = [[11, 3], [12, 1], [13, 0], [14, 0], [13, 1], [14, 1]]
-        bubble.slice(0, [0, 1, 2, 6][frame % 4]).forEach(([x, y]) => {
-          px[y][x] = 'Q'
+        const step = frame % 4
+        PUFFS.slice(0, Math.min(step, 2)).forEach(([x, y]) => {
+          px[y][x] = 'q'
         })
+        if (step === 3) {
+          BUBBLE.forEach((row, y) =>
+            [...row].forEach((c, i) => {
+              if (c !== '.') px[y][12 + i] = c
+            }),
+          )
+        }
       } else {
         if (frame % 2) {
           px[8][16] = '.'
