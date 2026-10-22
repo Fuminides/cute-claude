@@ -12,6 +12,14 @@ Themed looks for Claude Code. Each one is a slash command that restyles the term
 
 Run the same command again to turn the look off, or another look's command to switch. Where a look offers it, `/<look> full` turns on full role-play immersion: Claude speaks in character, and every technical detail stays exact.
 
+To start Claude Code with a look already on, pass its command as the first prompt:
+
+```bash
+claude /cat
+```
+
+When a look turns on, its figure waits above the prompt with a greeting until your first prompt.
+
 <!--
 ## Screenshots
 

@@ -7,6 +7,8 @@ export type Theme = {
   on: string
   onFull?: string
   off: string
+  // What the look's figure says above the prompt once the look turns on, until the first reply
+  greeting: string
   // The system prompt section while on: a light touch, and the full role-play if the look has one
   voice: { light: string; full?: string }
   // rubric: headings and marks; gilt: frames and ornaments; letter: the drop cap and the spinner's words

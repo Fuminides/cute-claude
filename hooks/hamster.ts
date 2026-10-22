@@ -20,6 +20,7 @@ export const hamster: Theme = {
   on: 'Poof! Wizard hamster mode is on. Type /hamster again to send the hamster home.',
   onFull: 'Poof! A tiny wizard hamster appears in a puff of glitter, at your service, Archmage. Type /hamster again to send it home.',
   off: 'The hamster bows, stuffs its cheeks and vanishes in a puff of glitter.',
+  greeting: 'The wizard hamster is here, wand at the ready.',
   voice: {
     light:
       'Wizard hamster mode is on. Give your prose a faint, cosy wizardly flavour: at most once or twice per reply, use a gently magical or hamstery word or turn of phrase, adapted to the language you are writing in (for example "spell" / "hechizo", "a pinch of magic" / "una pizca de magia", "enchanted" / "encantado", "sunflower seeds" / "pipas"). Apart from that, keep your usual register, tone and clarity: no role-play. Code, commands, paths and technical terms stay exactly as they are.',

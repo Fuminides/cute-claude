@@ -97,6 +97,7 @@ export const cat: Theme = {
   on: 'Mrrp! Cat mode is on. Type /cat again to shoo the cat off the keyboard.',
   onFull: "Mrrp! I'm on your keyboard now, my human. Type /cat again to shoo me off.",
   off: 'Cat mode is off. The cat has wandered off for a nap.',
+  greeting: 'Mazapan is here, curled up by your keyboard.',
   voice: {
     light:
       'Cat mode is on. Give your prose a faint cat flavour: at most once or twice per reply, use a cat-flavoured word or turn of phrase, adapted to the language you are writing in (for example "purr" / "ronroneo", "paws" / "patitas", "pounce" / "abalanzarse", "nap" / "siesta", "meow" / "miau"). Apart from that, keep your usual register, tone and clarity: no role-play. Code, commands, paths and technical terms stay exactly as they are.',

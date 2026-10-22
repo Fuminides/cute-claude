@@ -219,6 +219,46 @@ test('the spinner keeps the seconds, tokens and effort the engine would show', a
   expect(await stats()).toBe('3s · ↓ 12 tokens · high effort')
 })
 
+test('a look greets above the prompt from turning on until the first turn', async ($, on) => {
+  engine(on)
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const greeting = async (props: { hasSurvey?: boolean; maxRows?: number } = {}) => {
+    const ui = await $.ui.mount({
+      plugin: 'cute-claude',
+      surface: 'terminal',
+      component: 'AbovePrompt',
+      props: {
+        hasSurvey: false,
+        isWorking: false,
+        maxRows: 20,
+        bodyColumns: 80,
+        scroll: { offset: 0, bodyRows: 20 },
+        view: {},
+        ...props,
+      },
+    })
+    const text = (await ui.find({ type: 'Text', text: / is here/ }))?.text
+    await ui.unmount()
+    return text
+  }
+
+  expect(await greeting()).toBeUndefined()
+  await $.command.run({ command: 'cat', args: '' })
+  expect(await greeting()).toBe('Mazapan is here, curled up by your keyboard.')
+  // A survey, or a band too short for the picture, keeps the engine's drawing
+  expect(await greeting({ hasSurvey: true })).toBeUndefined()
+  expect(await greeting({ maxRows: 4 })).toBeUndefined()
+
+  await $.turn.start({ text: 'hola', turnId: 't1' })
+  expect(await greeting()).toBeUndefined()
+
+  // Switching to another look greets again
+  await $.command.run({ command: 'hamster', args: '' })
+  expect(await greeting()).toBe('The wizard hamster is here, wand at the ready.')
+})
+
 test('your own messages are rubricated, other rows keep the engine drawing', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })

@@ -26,6 +26,7 @@ export const medieval: Theme = {
   status: '✠ Ora et labora ✠',
   on: 'Hear ye: medieval mode is on. Type /medieval again to return to the modern age.',
   off: 'Medieval mode is off. Modern times return.',
+  greeting: 'Brother scribe is at his desk, quill inked and ready.',
   // A light touch only: the reply keeps its normal register
   voice: {
     light:

@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Register, Timer } from 'claude-code'
+import type { Elements, Register, Timer } from 'claude-code'
 
 import { cat } from './cat'
 import { halo } from './halo'
@@ -134,9 +134,26 @@ const cells = (px: string[][], pixels: Record<string, string>) => {
   return rows
 }
 
+// A picture as a column of half-block rows, as wide as it is, with room after it
+const picture = ({ Box, Text }: Pick<Elements['terminal'], 'Box' | 'Text'>, px: string[][], pixels: Record<string, string>) => (
+  <Box flexDirection="column" width={px[0].length} flexShrink={0} marginRight={2}>
+    {cells(px, pixels).map(row => (
+      <Text>
+        {row.map(run => (
+          <Text color={run.color} backgroundColor={run.backgroundColor}>
+            {run.text}
+          </Text>
+        ))}
+      </Text>
+    ))}
+  </Box>
+)
+
 export const register: Register = on => {
   // The look that is on, if any, and whether it speaks in full immersion
   let look: { theme: Theme; isFull: boolean } | undefined
+  // Whether the look's figure greets above the prompt: from turning it on to the first turn
+  let isGreeting = false
   let timer: Timer | undefined
   let startedAt = 0
   // The main turn's output tokens so far, and the effort its requests ask for
@@ -149,6 +166,7 @@ export const register: Register = on => {
     const isFull = args.trim() === 'full' && theme.voice.full !== undefined
     const isOff = look?.theme === theme && (args.trim() === '' || look.isFull === isFull)
     look = isOff ? undefined : { theme, isFull }
+    isGreeting = !isOff
 
     return isOff ? theme.off : isFull && theme.onFull ? theme.onFull : theme.on
   }
@@ -175,6 +193,7 @@ export const register: Register = on => {
   on('turn.start', async ($, e, next) => {
     if (e.agentId !== undefined || !look) return next(e)
 
+    isGreeting = false
     timer?.cancel()
     startedAt = await $.clock.now()
     tokens = 0
@@ -344,17 +363,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" alignItems="center">
-          <Box flexDirection="column" width={sprite.base[0].length} flexShrink={0} marginRight={2}>
-            {cells(px, sprite.pixels).map(row => (
-              <Text>
-                {row.map(run => (
-                  <Text color={run.color} backgroundColor={run.backgroundColor}>
-                    {run.text}
-                  </Text>
-                ))}
-              </Text>
-            ))}
-          </Box>
+          {picture({ Box, Text }, px, sprite.pixels)}
           <Box flexDirection="column">
             <Box flexDirection="row">
               <Text color={t.colors.gilt}>{`${t.icon} `}</Text>
@@ -372,6 +381,27 @@ export const register: Register = on => {
             {saying.by ? <Text dimColor>{` · ${saying.by}`}</Text> : null}
           </Text>
         ) : null}
+      </Box>
+    )
+  })
+
+  // Once a look turns on, its figure waits above the prompt with a greeting
+  // until the first turn starts; a survey, or a band too short for the
+  // picture, keeps the engine's drawing
+  on('ui.render', { component: 'AbovePrompt' }, ($, e, next) => {
+    const t = look?.theme
+    const isShown = t && isGreeting && e.surface === 'terminal' && !e.props.hasSurvey && !e.props.isWorking
+    if (!isShown || e.props.maxRows < t.sprite.base.length / 2) return next(e)
+
+    const { Box, Text } = $.ui.resolve(e)
+
+    return (
+      <Box flexDirection="row" alignItems="center">
+        {picture({ Box, Text }, t.sprite.base.map(row => [...row]), t.sprite.pixels)}
+        <Text color={t.colors.gilt}>{`${t.icon} `}</Text>
+        <Text color={t.colors.letter} bold>
+          {t.greeting}
+        </Text>
       </Box>
     )
   })

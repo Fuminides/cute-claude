@@ -20,6 +20,7 @@ export const halo: Theme = {
   on: 'Cortana online. Type /halo again to pull her chip.',
   onFull: "Cortana online. I'm in your armour now, Chief. Type /halo again to pull my chip.",
   off: 'Cortana offline. Chip pulled.',
+  greeting: 'Cortana here. Ready when you are.',
   voice: {
     light:
       'Halo mode is on. Give your prose a faint Halo flavour: at most once or twice per reply, use a term or turn of phrase from that universe, adapted to the language you are writing in (for example "Chief" / "jefe", "Spartan", "UNSC", "Forerunner", "the Covenant" / "el Covenant", "slipspace"). Apart from that, keep your usual register, tone and clarity: no role-play. Code, commands, paths and technical terms stay exactly as they are.',

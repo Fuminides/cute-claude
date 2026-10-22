@@ -22,6 +22,7 @@ export const mechanicus: Theme = {
   onFull:
     '+++ Noosphere link established. Full rite engaged: the Omnissiah speaks. Type /mechanicus again to sever it. +++',
   off: '+++ Link severed. The machine spirit rests. +++',
+  greeting: 'The tech-priest stands ready. The machine spirit is willing.',
   voice: {
     light:
       'Mechanicus mode is on. Give your prose a faint Adeptus Mechanicus flavour, from Warhammer 40,000: at most once or twice per reply, use a term or turn of phrase from that lore, adapted to the language you are writing in (for example "machine spirit" / "espíritu máquina", "cogitator" / "cogitador", "scrapcode", "praise the Omnissiah" / "alabado sea el Omnissiah"). Apart from that, keep your usual register, tone and clarity: no role-play. Code, commands, paths and technical terms stay exactly as they are.',
