@@ -43,6 +43,13 @@ const GLANCE = [0, -1, 0, 1]
 const Z = ['zzz', '..z', '.z.', 'zzz']
 const DRIFT = [[13, 2], [15, 1], [17, 0]]
 
+// The cat poured into a jar: the drip of cat running over the rim and down
+// the glass, in the order it runs; how far its stripes slosh to one side and
+// back; and its eyelids through one slow blink (0 open, 1 lowered, 2 shut)
+const DRIP = [[4, 6], [3, 7], [3, 8], [2, 9], [1, 10], [1, 11], [1, 12]]
+const SLOSH = [0, 1, 2, 1]
+const LIDS = [0, 0, 0, 1, 2, 2, 1, 0]
+
 // The cat's own colours, the same in every scene
 const FUR = {
   K: '#3b2416', // outline
@@ -303,6 +310,54 @@ export const cat: Theme = {
           const step = Math.floor(frame / 2) % (DRIFT.length + 1)
           if (step < DRIFT.length) put(px, DRIFT[step][0], DRIFT[step][1], Z)
           if (Math.floor(frame / 4) % 2) put(px, 14, 6, ['KKKKK', 'OOoOO'])
+        }
+      },
+    },
+    // The rare one: the cat has been poured into a jar, filling it to the
+    // brim, its paws pressed to the glass and a little of it dripping over
+    {
+      weight: 0.2,
+      pixels: {
+        ...FUR,
+        J: '#8fb3c9', // glass
+        j: '#e3f1f8', // the glass's shine
+      },
+      base: [
+        '........K.......K.......',
+        '.......KPK.....KPK......',
+        '.......KPOKKKKKOPK......',
+        '......KOOOOoOoOOOOK.....',
+        '......KOOOOOoOOOOOK.....',
+        '......KOkQOOOOOkQOK.....',
+        '....OJKpkkOOPOOkkpKJ....',
+        '...OJJJJJJJJJJJJJJJJJ...',
+        '...OJOOOOOOOOOOOOOOOJ...',
+        '...JPOPoPoOOOOOoooOjOJ..',
+        '..JjOPPPOOoooOOOOOOoOOJ.',
+        '..JjoPPPOOOOOOoOOOOOOOJ.',
+        '..JjOOOOOOooOOOPOPoPoOJ.',
+        '..JOOOOOOOOOOOOOPPPOOOJ.',
+        '...JOOOoooOOOOOOPPPOOJ..',
+        '....JJJJJJJJJJJJJJJJJ...',
+      ],
+      // While it writes, the cat sloshes in the jar, its stripes swaying and
+      // its head dipping, and the drip runs down the glass; while it thinks,
+      // it holds perfectly still and gives one slow blink
+      animate: (px, frame, isThinking) => {
+        if (isThinking) {
+          const lids = LIDS[frame % LIDS.length]
+          if (lids === 1) for (const x of [8, 15]) put(px, x, 5, ['OO', 'kQ'])
+          if (lids === 2) shut(px, 5, 0)
+        } else {
+          const shift = SLOSH[frame % SLOSH.length]
+          for (let y = 8; y < 15; y++) {
+            const xs = px[y].flatMap((c, x) => (x > 3 && 'Oo'.includes(c) ? [x] : []))
+            const fur = xs.map(x => px[y][x])
+            xs.forEach((x, i) => (px[y][x] = fur[(i + shift) % fur.length]))
+          }
+          if (shift === 2) sink(px, 6, 18, 1, 7)
+          DRIP.forEach(([x, y]) => (px[y][x] = '.'))
+          DRIP.slice(0, 1 + (frame % DRIP.length)).forEach(([x, y]) => (px[y][x] = 'O'))
         }
       },
     },
