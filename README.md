@@ -44,16 +44,6 @@ When a look turns on, its figure waits above the prompt with a greeting until yo
 
 ![The Halo look: Cortana's hologram flickers while Claude rewrites a line as an f-string](demos/halo.gif)
 
-<!--
-## Screenshots
-
-![medieval](screenshots/medieval.png)
-![mechanicus](screenshots/mechanicus.png)
-![halo](screenshots/halo.png)
-![cat](screenshots/cat.png)
-![hamster](screenshots/hamster.png)
--->
-
 ## Install
 
 At the prompt of a Claude Code terminal session:
