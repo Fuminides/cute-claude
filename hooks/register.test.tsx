@@ -373,7 +373,7 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
   expect(await voice()).toMatch(/^Full Mechanicus immersion is on/)
 
   let ui = await $.ui.mount(reply('hola, Magos.\n\n# Rite of tests'))
-  expect((await ui.find({ type: 'Text', text: /^H$/ }))?.props.color).toBe('#22B14C')
+  expect((await ui.find({ type: 'Text', text: /^ℍ$/ }))?.props.color).toBe('#22B14C')
   expect((await ui.find({ type: 'Text', text: /^Rite of tests$/ }))?.props.color).toBe('#C62828')
   expect(await ui.find({ type: 'Text', text: /^\+\+\+ Rite of tests \+\+\+$/ })).toBeDefined()
   await ui.unmount()
@@ -394,8 +394,8 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
     props: { word: 'Baking', message: null, suffix: '…', mode: 'responding' },
   })
   expect(await ui.find({ type: 'Text', text: /^⚙︎ $/ })).toBeDefined()
-  // 'Baking' picks this phrase; writing, it shines steady
-  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#22B14C')
+  // 'Baking' picks this phrase, its capital stamped in steel; writing, it shines steady
+  expect((await ui.find({ type: 'Text', text: /^𝔸ppeasing the machine spirit$/ }))?.props.color).toBe('#22B14C')
   await ui.unmount()
 
   // Thinking, it pulses, starting from its dimmest
@@ -405,7 +405,7 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
     component: 'Spinner',
     props: { word: 'Baking', message: null, suffix: '…', mode: 'thinking' },
   })
-  expect((await ui.find({ type: 'Text', text: /^Burning sacred incense$/ }))?.props.color).toBe('#1f8f3c')
+  expect((await ui.find({ type: 'Text', text: /^𝔸ppeasing the machine spirit$/ }))?.props.color).toBe('#1f8f3c')
   await ui.unmount()
 
   // Each turn the tech-priest is drawn at something else
@@ -415,7 +415,7 @@ test('mechanicus takes over from medieval, and its full rite swaps the voice', a
   expect(await voice()).toBe('')
 })
 
-test("the monk says the day's saying beneath himself, and the tech-priest keeps quiet", async ($, on) => {
+test("the monk says the day's saying beneath himself, and the tech-priest his own", async ($, on) => {
   const clock = engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.command.run({ command: 'medieval', args: '' })
@@ -440,9 +440,11 @@ test("the monk says the day's saying beneath himself, and the tech-priest keeps 
   expect(await ui.find({ type: 'Text', text: ' · S. Augustinus' })).toBeDefined()
   await ui.unmount()
 
+  // The same day, the tech-priest recites one of the Universal Laws
   await $.command.run({ command: 'mechanicus', args: '' })
   ui = await spinner()
-  expect(await ui.find({ type: 'Text', text: /«/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: '« The spirit is the spark of life »' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: ' · the Universal Laws' })).toBeDefined()
   await ui.unmount()
 })
 
