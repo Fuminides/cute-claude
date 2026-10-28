@@ -10,40 +10,75 @@ const PHOSPHOR_TEXT = '#22B14C'
 // The cog, in its text presentation so that no font draws it as a two-cell emoji
 const COG_GLYPH = '⚙︎'
 
+// Double-struck capital for the first letter of a reply, as if stamped in
+// steel; seven of them live in the older letterlike block
+const LETTERLIKE: Record<string, number> = { C: 0x2102, H: 0x210d, N: 0x2115, P: 0x2119, Q: 0x211a, R: 0x211d, Z: 0x2124 }
+const stamp = (letter: string) => {
+  const c = letter.toUpperCase()
+  if (!/^[A-Z]$/.test(c)) return letter
+  return String.fromCodePoint(LETTERLIKE[c] ?? 0x1d538 + c.charCodeAt(0) - 65)
+}
+
 // Lines of text that scroll up the cogitator's screen while he writes, a blank
 // line between each, and the same lines in red: scrapcode
-const LINES = ['GGGBGGBGG', 'BBBBBBBBB', 'GGBGGGGBg', 'BBBBBBBBB', 'gGGGBGGBG', 'BBBBBBBBB']
+const LINES = ['GGGBGGBG', 'BBBBBBBB', 'GGBGGGGB', 'BBBBBBBB', 'gGGGBGGB', 'BBBBBBBB']
 const SCRAPCODE = LINES.map(line => line.replace(/G/g, 'L').replace(/g/g, 'l'))
 
-// A cog turning on the screen while he thinks, a quarter-tooth apart
+// A cog turning, a quarter-tooth apart: on the screen while he thinks, and
+// larger on the shrine while he prays
 const COG = [
   ['BBGBB', 'BGGGB', 'GGBGG', 'BGGGB', 'BBGBB'],
   ['GBBBG', 'BGGGB', 'BGBGB', 'BGGGB', 'GBBBG'],
+]
+const SHRINE_COG = [
+  ['...M...', '.MMMMM.', '.MCCCM.', 'MMCWCMM', '.MCCCM.', '.MMMMM.', '...M...'],
+  ['.M...M.', '..MMM..', 'MMCCCMM', '.MCWCM.', 'MMCCCMM', '..MMM..', '.M...M.'],
 ]
 
 // The skull that glares from the screen when the machine spirit is displeased
 const SKULL = ['.LLLLL.', 'LLLLLLL', 'LBBLBBL', '.LLLLL.', '.L.L.L.']
 
+// The mechadendrite from his back, over his hood, to its claw: a pulse of data
+// runs along it while he writes
+const DENDRITE = [[3, 4], [3, 3], [3, 2], [4, 1], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 1], [12, 1], [13, 1], [14, 1], [15, 1]]
+
+// The keys his hand strikes, one a frame
+const KEYS = [16, 14, 20, 18]
+
 // The servo-skull's cable, from its base down to his hand, and how far it
-// drifts in towards him and back
-const CABLE = [[17, 10], [16, 11], [15, 12], [14, 12], [13, 11]]
+// drifts in towards him and back, its lenses turning to him as it comes
+const CABLE = [[18, 10], [17, 11], [16, 12], [15, 12], [14, 11]]
 const HOVER = [0, -1, -1, 0]
 
-// Where a drop of oil falls from the flask: twice in the air, then on the casing
-const DRIP = [[18, 3], [18, 4], [18, 5]]
+// The censer hangs from his claw and sways while he prays; its smoke climbs,
+// and the binary of his chant drifts up from his grille
+const SWAY = [0, 1, 0, -1]
+const SMOKE = [[16, 9], [17, 8], [16, 7], [16, 6], [17, 5], [17, 4], [16, 3]]
+const CHANT = [[13, 8], [14, 7], [13, 6], [14, 5], [13, 4]]
+
+// The mechadendrites he flails when the machine spirit rages, three poses
+const FLAIL = [
+  ['S.....', '.s..S.', '.S..s.', '..sS..', '..Ss..', '...s..'],
+  ['......', 'sS....', '..sS.S', '...ss.', '..sS..', '...s..'],
+  ['..S...', '..s...', 'S.S.s.', '.sS.S.', '..Ss..', '...s..'],
+]
+// And the sparks that fly off the cogitator's casing
+const SPARKS = [[[13, 2], [12, 1]], [[23, 2], [23, 0]], [[13, 1], [14, 0]]]
 
 // The tech-priest's own colours, and his cogitator's, the same in every scene
 const PRIEST = {
-  K: '#140a0a', // outline
+  K: '#3a1616', // outline
   R: '#a3191c', // robe
   r: '#6b0f12', // robe in shadow
+  P: '#d0393e', // the hood's edge, lit by the screen
   H: '#0d0606', // inside the hood
   E: PHOSPHOR, // eyes
-  e: '#1f8f3c', // eyes dimmed
+  O: '#d8ffe0', // eyes flaring
   M: '#b08d57', // brass
   m: '#6e5531', // brass in shadow
-  C: '#d9b76a', // bright brass: cog, keys, the flask and its oil
-  S: '#8a8f94', // steel: mechadendrite and hand
+  C: '#d9b76a', // bright brass: cog, claw, keys
+  W: '#e8dcc0', // ivory: the heart of the cog, a key struck
+  S: '#8a8f94', // steel: mechadendrite, grille and hand
   s: '#4b5055', // steel in shadow
   B: '#062b12', // screen
   G: PHOSPHOR, // glyphs on the screen
@@ -68,6 +103,19 @@ const move = (px: string[][], x0: number, x1: number, y0: number, y1: number, dx
 // The four lines of the screen as they stand at this frame, scrolling up
 const scroll = (lines: string[], frame: number) => [0, 1, 2, 3].map(i => lines[(frame + i) % lines.length])
 
+// A run of two pixels along a path, a step further each frame
+const pulse = (px: string[][], path: number[][], frame: number, c: string) =>
+  [0, 1].forEach(i => {
+    const [x, y] = path[(2 * frame + i) % path.length]
+    px[y][x] = c
+  })
+
+// The censer on its chain from the claw at 15, 1, swung dx at the bottom
+const censer = (px: string[][], dx: number) => {
+  for (let k = 1; k <= 7; k++) px[1 + k][15 + Math.round((dx * k) / 7)] = k % 2 ? 's' : 'S'
+  put(px, 14 + dx, 9, ['.M.', 'MCM', 'mMm'])
+}
+
 export const mechanicus: Theme = {
   command: 'mechanicus',
   description: 'Toggle the Adeptus Mechanicus look; /mechanicus full for full role-play immersion',
@@ -85,7 +133,7 @@ export const mechanicus: Theme = {
   },
   colors: { rubric: RED, gilt: BRASS, letter: PHOSPHOR_TEXT },
   pulse: '#1F8F3C',
-  initial: letter => letter.toUpperCase(),
+  initial: stamp,
   frame: 'bold',
   heading: ['+++ ', ' +++'],
   rule: `──── ${COG_GLYPH} ────`,
@@ -104,46 +152,68 @@ export const mechanicus: Theme = {
     'Calibrating the auspex',
     'Burning sacred incense',
     'Performing the rite of activation',
+    'Swinging the censer',
+    'Blessing the servitors',
   ],
   done: ['Sanctified', 'Consecrated', 'Compiled', 'Ratified', 'Anointed'],
-  // The tech-priest at his cogitator, a mechadendrite arching over his hood
+  sayings: [
+    { text: 'The flesh is weak' },
+    { text: 'There is no truth in flesh, only betrayal', by: 'Credo Omnissiah' },
+    { text: 'Life is directed motion', by: 'the Universal Laws' },
+    { text: 'There is no strength in flesh, only weakness', by: 'Credo Omnissiah' },
+    { text: 'The spirit is the spark of life', by: 'the Universal Laws' },
+    { text: 'There is no constancy in flesh, only decay', by: 'Credo Omnissiah' },
+    { text: 'Comprehension is the key to all things', by: 'the Universal Laws' },
+    { text: 'There is no certainty in flesh but death', by: 'Credo Omnissiah' },
+    { text: 'The Omnissiah knows all, comprehends all', by: 'the Universal Laws' },
+    { text: 'Even in death I serve the Omnissiah' },
+    { text: '01000001 01110110 01100101', by: 'binaric cant' },
+  ],
+  // The tech-priest at his cogitator, his mechadendrite arched over his hood
+  // and plugged into its casing
   sprite: {
     pixels: PRIEST,
     base: [
-      '....sSsS................',
-      '...S....s...............',
-      '..s......S..mMMMMMMMMMm.',
-      '..S..KKK..s.MBBBBBBBBBM.',
-      '...KKRRRK..SMBBBBBBBBBM.',
-      '..KRRRRRRK..MBBBBBBBBBM.',
-      '..KRRRHHHHK.MBBBBBBBBBM.',
-      '.KRRRRHEHEK.MBBBBBBBBBM.',
-      '.KRRRRHHHHK.MBBBBBBBBBM.',
-      '.KRRRRRHK...mMMMMCMMMMm.',
-      'KRRRRRRRRK.....mm.mm....',
-      'KRRRRRRRRRRRSs..........',
-      'KRRRrRRRRKmMMMMMMMMMMm..',
-      'KRRRrRRRRKmCmCmCmCmCmm..',
-      'KrrrrrrrrKKKKKKKKKKKKKK.',
-      'KKKKKKKKKK..ss......ss..',
+      '.....sSsSsS.............',
+      '....S......sSsSsC.......',
+      '...s..KKK.......C.......',
+      '...S.KRRPK....mMMMMMMMMm',
+      '...sKRRRRPK...MBBBBBBBBM',
+      '...KRRRRHHPK..MBBBBBBBBM',
+      '..KRRRRHHHHPK.MBBBBBBBBM',
+      '..KRRRHEEHEEK.MBBBBBBBBM',
+      '..KRRRHSsSsSK.MBBBBBBBBM',
+      '.KRRRRRsSsSsK.mMMMCMMMMm',
+      '.KRRRRRRsRsRK....mm.mm..',
+      'KRRRCRRRsRsRRSs.........',
+      'KrRCWCRRRRRRKmMMMMMMMMm.',
+      'KrRRCRRRRRRrKmCmCmCmCmm.',
+      'KrrrrrrrrrrrKKKKKKKKKKKK',
+      'KKKKKKKKKKKKK.ss.....ss.',
     ],
-    // While he writes, lines scroll up the screen, his hand types and the
-    // mechadendrite's tip flickers; while he thinks, a cog turns on the
-    // screen, the cursor blinks and his eyes pulse
+    // While he writes, lines scroll up the screen, a pulse of data runs along
+    // the mechadendrite and his hand strikes the keys; while he thinks, a cog
+    // turns on the screen, the cursor blinks, the claw works and his eyes flare
     animate: (px, frame, isThinking) => {
       if (isThinking) {
-        put(px, 15, 3, COG[frame % 2])
-        if (frame % 2 === 0) px[8][13] = 'G'
-        if (frame % 4 >= 2) px[7][7] = px[7][9] = 'e'
+        put(px, 16, 4, COG[frame % 2])
+        if (frame % 2 === 0) px[8][15] = 'G'
+        if (frame % 2) {
+          px[2][16] = '.'
+          px[2][15] = px[2][17] = 'C'
+        }
+        if (frame % 4 >= 2) px[7][7] = px[7][10] = 'O'
       } else {
-        put(px, 13, 4, scroll(LINES, frame))
-        if (frame % 2) put(px, 12, 11, ['sS'])
-        px[4][11] = frame % 2 ? 'S' : 's'
+        put(px, 15, 4, scroll(LINES, frame))
+        pulse(px, DENDRITE, frame, 'G')
+        px[13][KEYS[frame % KEYS.length]] = 'W'
+        if (frame % 2) put(px, 13, 11, ['sS'])
       }
     },
   },
   scenes: [
-    // A servo-skull hovers before him, its cable in his hand
+    // A servo-skull hovers before him, its cable in his hand, his claw
+    // reaching out to steady it
     {
       pixels: {
         ...PRIEST,
@@ -152,110 +222,127 @@ export const mechanicus: Theme = {
         L: '#ff3b30', // its lenses
       },
       base: [
-        '....sSsS.........S......',
-        '...S....s........S......',
-        '..s......S.....KKKKK....',
-        '..S..KKK..s...KWWWWWK...',
-        '...KKRRRK..S.KWWWWWWWK..',
-        '..KRRRRRRK...KWKKWKKWK..',
-        '..KRRRHHHHK..KWKLWKLWK..',
-        '.KRRRRHEHEK...KWWwWWK...',
-        '.KRRRRHHHHK...KwKwKwK...',
-        '.KRRRRRHK......KKKKK....',
-        'KRRRRRRRRK.......s......',
-        'KRRRRRRRRRRRSs..s.......',
-        'KRRRrRRRRK....ss........',
-        'KRRRrRRRRK..............',
-        'KrrrrrrrrK..............',
-        'KKKKKKKKKK..............',
+        '.....sSsSsS..C....S.....',
+        '....S......sC.....S.....',
+        '...s..KKK....C..KKKKK...',
+        '...S.KRRPK.....KWWWWWK..',
+        '...sKRRRRPK...KWWWWWWWK.',
+        '...KRRRRHHPK..KWKKWKKWK.',
+        '..KRRRRHHHHPK.KWKLWKLWK.',
+        '..KRRRHEEHEEK..KWWwWWK..',
+        '..KRRRHSsSsSK..KwKwKwK..',
+        '.KRRRRRsSsSsK...KKKKK...',
+        '.KRRRRRRsRsRK.....s.....',
+        'KRRRCRRRsRsRRSs..s......',
+        'KrRCWCRRRRRRK..ss.......',
+        'KrRRCRRRRRRrK...........',
+        'KrrrrrrrrrrrK...........',
+        'KKKKKKKKKKKKK...........',
       ],
       // While he writes, the skull bobs on the beat and a pulse of data runs
       // down its cable to his hand; while he thinks, it drifts in towards him
-      // and back, its cable slackening
+      // and back, its lenses turning to him, its cable slackening
       animate: (px, frame, isThinking) => {
         if (isThinking) {
-          move(px, 13, 21, 0, 9, HOVER[frame % HOVER.length], 0)
+          if (frame % 4 === 1 || frame % 4 === 2) {
+            px[6][16] = px[6][19] = 'L'
+            px[6][17] = px[6][20] = 'K'
+          }
+          move(px, 14, 22, 0, 9, HOVER[frame % HOVER.length], 0)
         } else {
-          if (frame % 4 >= 2) move(px, 13, 21, 1, 9, 0, -1)
+          if (frame % 4 >= 2) move(px, 14, 22, 1, 9, 0, -1)
           const [x, y] = CABLE[frame % CABLE.length]
           px[y][x] = 'G'
-          px[4][11] = frame % 2 ? 'S' : 's'
         }
       },
     },
-    // Anointing the cogitator: his mechadendrite tips a flask of sacred oil
-    // over its casing while he types
+    // The rite of incense: a censer swings from his claw before a shrine of
+    // the cog, its smoke climbing, while he chants
     {
-      pixels: PRIEST,
+      pixels: {
+        ...PRIEST,
+        Q: '#b9b4a8', // smoke
+      },
       base: [
-        '....sSsSsS..............',
-        '...S......sS....CC......',
-        '..s.........sSsSCCC.....',
-        '..S..KKK................',
-        '...KKRRRK...............',
-        '..KRRRRRRK..mMMMMMMMMMm.',
-        '..KRRRHHHHK.MBBBBBBBBBM.',
-        '.KRRRRHEHEK.MBBBBBBBBBM.',
-        '.KRRRRHHHHK.MBBBBBBBBBM.',
-        '.KRRRRRHK...MBBBBBBBBBM.',
-        'KRRRRRRRRK..MBBBBBBBBBM.',
-        'KRRRRRRRRRRRSsMMMCMMMMm.',
-        'KRRRrRRRRKmMMMMMMMMMMm..',
-        'KRRRrRRRRKmCmCmCmCmCmm..',
-        'KrrrrrrrrKKKKKKKKKKKKKK.',
-        'KKKKKKKKKK..ss......ss..',
+        '.....sSsSsS.............',
+        '....S......sSsSC........',
+        '...s..KKK...............',
+        '...S.KRRPK..............',
+        '...sKRRRRPK.............',
+        '...KRRRRHHPK............',
+        '..KRRRRHHHHPK...........',
+        '..KRRRHEEHEEK......mMm..',
+        '..KRRRHSsSsSK......mMm..',
+        '.KRRRRRsSsSsK......mMm..',
+        '.KRRRRRRsRsRK......mMm..',
+        'KRRRCRRRsRsRK......mMm..',
+        'KrRCWCRRRRRRK.....mMMMm.',
+        'KrRRCRRRRRRrK....mMMMMMm',
+        'KrrrrrrrrrrrKKKKKKKKKKKK',
+        'KKKKKKKKKKKKK...........',
       ],
-      // While he writes, lines scroll up the screen and a drop of oil falls
-      // and lands on the casing; while he thinks, the cog turns and the oil
-      // holds in the flask
+      // While he prays, the censer sways and its smoke climbs; while he
+      // writes, the censer hangs still, the binary of his chant drifts up and
+      // the shrine's cog turns
       animate: (px, frame, isThinking) => {
         if (isThinking) {
-          put(px, 15, 6, COG[frame % 2])
+          put(px, 17, 0, SHRINE_COG[0])
+          censer(px, SWAY[frame % SWAY.length])
+          ;[0, 3].forEach(i => {
+            const [x, y] = SMOKE[(frame + i) % SMOKE.length]
+            px[y][x + SWAY[frame % SWAY.length]] = 'Q'
+          })
         } else {
-          put(px, 13, 6, scroll(LINES, frame))
-          const drop = DRIP[frame % 4]
-          if (drop) px[drop[1]][drop[0]] = 'C'
+          censer(px, 0)
+          put(px, 17, 0, SHRINE_COG[frame % 2])
+          ;[0, 3].forEach(i => {
+            const [x, y] = CHANT[(frame + i) % CHANT.length]
+            px[y][x] = (frame + i) % 2 ? 'G' : 'g'
+          })
         }
       },
     },
-    // The rare one: the machine spirit is displeased, scrapcode fills the
-    // screen in red and he throws both hands up
+    // The rare one: the machine spirit is displeased. His hood falls back on
+    // a skull of chrome, his eyes burn red, scrapcode fills the screen and
+    // his mechadendrites flail
     {
       weight: 0.2,
       pixels: {
         ...PRIEST,
-        L: '#ff3b30', // scrapcode, and the skull it draws
+        L: '#ff3b30', // scrapcode, his burning eyes and the skull on the screen
         l: '#8a1a14', // dim scrapcode
+        F: '#ffb52e', // sparks
       },
       base: [
-        '....sSsS................',
-        '...S....s...............',
-        '..s......S..mMMMMMMMMMm.',
-        '..S..KKK.S..MBBBBBBBBBM.',
-        'SS.KKRRRK.SSMBBBBBBBBBM.',
-        'SSKRRRRRRKSSMBBBBBBBBBM.',
-        'RRKRRRHHHHrRMBBBBBBBBBM.',
-        'RRKRRRHEHErRMBBBBBBBBBM.',
-        'RRKRRRHHHHrRMBBBBBBBBBM.',
-        'RKRRRRRHKRR.mMMMMCMMMMm.',
-        'KRRRRRRRRRR....mm.mm....',
-        'KRRRRRRRRK..............',
-        'KRRRrRRRRKmMMMMMMMMMMm..',
-        'KRRRrRRRRKmCmCmCmCmCmm..',
-        'KrrrrrrrrKKKKKKKKKKKKKK.',
-        'KKKKKKKKKK..ss......ss..',
+        '........................',
+        '........................',
+        '......sSSSs.............',
+        '.....sSSSSSs..mMMMMMMMMm',
+        '.....SKLSKLS..MBBBBBBBBM',
+        '.....sSSsSSs..MBBBBBBBBM',
+        '......SKSKS...MBBBBBBBBM',
+        '..KKRRsSsSsRK.MBBBBBBBBM',
+        '..KRRRRsRsRRK.MBBBBBBBBM',
+        '.KRRRRRRsRsRK.mMMMCMMMMm',
+        '.KRRRRRRsRsRK....mm.mm..',
+        'KRRRCRRRsRsRRSs.........',
+        'KrRCWCRRRRRRKmMMMMMMMMm.',
+        'KrRRCRRRRRRrKmCmCmCmCmm.',
+        'KrrrrrrrrrrrKKKKKKKKKKKK',
+        'KKKKKKKKKKKKK.ss.....ss.',
       ],
-      // While he writes, scrapcode scrolls up the screen; while he thinks, a
-      // red skull glares from it and his hands tremble
+      // His mechadendrites flail all the while; while he writes, scrapcode
+      // scrolls up the screen; while he thinks, a red skull glares from it
+      // and sparks fly off its casing
       animate: (px, frame, isThinking) => {
+        put(px, 0, 1, FLAIL[frame % FLAIL.length])
         if (isThinking) {
-          put(px, 14, 3, SKULL)
-          if (frame % 2) {
-            move(px, 0, 1, 4, 5, 0, -1)
-            move(px, 10, 11, 4, 5, 0, -1)
-          }
+          put(px, 16, 4, SKULL)
+          SPARKS[frame % SPARKS.length].forEach(([x, y]) => {
+            px[y][x] = 'F'
+          })
         } else {
-          put(px, 13, 4, scroll(SCRAPCODE, frame))
+          put(px, 15, 4, scroll(SCRAPCODE, frame))
         }
       },
     },
